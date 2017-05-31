@@ -111,7 +111,9 @@ class AmazonInstanceTypeCachingAgent implements CachingAgent, CustomScheduledAge
     List<CacheData> data = []
     def request = new DescribeReservedInstancesOfferingsRequest()
     while (true) {
-      def offerings = ec2.describeReservedInstancesOfferings(request)
+      def offerings = AwsThrottler.throttleRequest {
+        ec2.describeReservedInstancesOfferings(request)
+      }
       Set<String> allIdentifiers = []
       data.addAll(offerings.reservedInstancesOfferings.findResults { ReservedInstancesOffering offering ->
         String key = Keys.getInstanceTypeKey(offering.instanceType, region, account.name)

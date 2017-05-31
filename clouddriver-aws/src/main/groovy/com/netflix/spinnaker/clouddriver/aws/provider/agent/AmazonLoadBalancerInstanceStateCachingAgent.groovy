@@ -107,7 +107,11 @@ class AmazonLoadBalancerInstanceStateCachingAgent implements CachingAgent, Healt
       try {
         Map<String, String> idObj = Keys.parse(loadBalancerKey)
         def lbName = idObj.loadBalancer
-        def result = loadBalancing.describeInstanceHealth(new DescribeInstanceHealthRequest(lbName))
+
+        def request = new DescribeInstanceHealthRequest(lbName)
+        def result = AwsThrottler.throttleRequest {
+          loadBalancing.describeInstanceHealth(request)
+        }
         def loadBalancerInstances = []
         for (instanceState in result.instanceStates) {
           def loadBalancerInstance = new LoadBalancerInstance(instanceState.instanceId, instanceState.state, instanceState.reasonCode, instanceState.description)

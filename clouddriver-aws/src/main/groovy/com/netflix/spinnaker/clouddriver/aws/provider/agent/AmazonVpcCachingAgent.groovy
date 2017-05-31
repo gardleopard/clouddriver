@@ -82,7 +82,9 @@ class AmazonVpcCachingAgent implements CachingAgent, AccountAware {
   CacheResult loadData(ProviderCache providerCache) {
     log.info("Describing items in ${agentType}")
     def ec2 = amazonClientProvider.getAmazonEC2(account, region)
-    def vpcs = ec2.describeVpcs().vpcs
+    def vpcs = AwsThrottler.throttleRequest {
+      ec2.describeVpcs().vpcs
+    }
 
     List<CacheData> data = vpcs.collect { Vpc vpc ->
       Map<String, Object> attributes = objectMapper.convertValue(vpc, AwsInfrastructureProvider.ATTRIBUTES)

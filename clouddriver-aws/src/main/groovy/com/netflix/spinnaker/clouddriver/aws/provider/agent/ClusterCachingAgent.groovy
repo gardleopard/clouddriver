@@ -29,6 +29,7 @@ import com.amazonaws.services.cloudwatch.model.DescribeAlarmsRequest
 import com.amazonaws.services.cloudwatch.model.MetricAlarm
 import com.amazonaws.services.ec2.AmazonEC2
 import com.amazonaws.services.ec2.model.DescribeSubnetsRequest
+import com.amazonaws.services.ec2.model.DescribeSubnetsResult
 import com.amazonaws.services.ec2.model.Subnet
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonProperty
@@ -253,7 +254,10 @@ class ClusterCachingAgent implements CachingAgent, OnDemandAgent, AccountAware, 
     if (subnetIds.length > 0) {
       request.withSubnetIds(subnetIds)
     }
-    for (Subnet subnet : clients.amazonEC2.describeSubnets(request).subnets) {
+    DescribeSubnetsResult describeSubnetsResult = AwsThrottler.throttleRequest {
+      clients.amazonEC2.describeSubnets(request)
+    }
+    for (Subnet subnet : describeSubnetsResult.subnets) {
       String existing = subnetMap.put(subnet.subnetId, subnet.vpcId)
       if (existing != null && existing != subnet.vpcId) {
         throw new RuntimeException("Unexpected non unique subnetId to vpcId mapping")
@@ -270,7 +274,9 @@ class ClusterCachingAgent implements CachingAgent, OnDemandAgent, AccountAware, 
 
     List<AutoScalingGroup> asgs = []
     while (true) {
-      def resp = clients.autoScaling.describeAutoScalingGroups(request)
+      def resp = AwsThrottler.throttleRequest {
+        clients.autoScaling.describeAutoScalingGroups(request)
+      }
       if (account.eddaEnabled) {
         start = amazonClientProvider.lastModified ?: 0
       }
@@ -308,7 +314,9 @@ class ClusterCachingAgent implements CachingAgent, OnDemandAgent, AccountAware, 
     }
     List<ScalingPolicy> scalingPolicies = []
     while (true) {
-      def resp = clients.autoScaling.describePolicies(request)
+      def resp = AwsThrottler.throttleRequest {
+        clients.autoScaling.describePolicies(request)
+      }
       scalingPolicies.addAll(resp.scalingPolicies)
       if (resp.nextToken) {
         request.withNextToken(resp.nextToken)
@@ -344,7 +352,9 @@ class ClusterCachingAgent implements CachingAgent, OnDemandAgent, AccountAware, 
     }
     List<ScheduledUpdateGroupAction> scheduledActions = []
     while (true) {
-      def resp = clients.autoScaling.describeScheduledActions(request)
+      def resp = AwsThrottler.throttleRequest {
+        clients.autoScaling.describeScheduledActions(request)
+      }
       scheduledActions.addAll(resp.scheduledUpdateGroupActions)
       if (resp.nextToken) {
         request.withNextToken(resp.nextToken)
@@ -370,7 +380,9 @@ class ClusterCachingAgent implements CachingAgent, OnDemandAgent, AccountAware, 
     }
     List<MetricAlarm> alarms = []
     while (true) {
-      def resp = clients.amazonCloudWatch.describeAlarms(request)
+      def resp = AwsThrottler.throttleRequest {
+        clients.amazonCloudWatch.describeAlarms(request)
+      }
       alarms.addAll(resp.metricAlarms)
       if (resp.nextToken) {
         request.withNextToken(resp.nextToken)

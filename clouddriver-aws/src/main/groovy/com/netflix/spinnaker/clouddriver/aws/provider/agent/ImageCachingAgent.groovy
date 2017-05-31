@@ -124,7 +124,9 @@ class ImageCachingAgent implements CachingAgent, AccountAware, DriftMetric, Cust
       request.withFilters(new Filter('is-public', ['false']))
     }
 
-    List<Image> images = amazonEC2.describeImages(request).images
+    List<Image> images = AwsThrottler.throttleRequest {
+      amazonEC2.describeImages(request).images
+    }
     Long start = null
     if (account.eddaEnabled) {
       start = amazonClientProvider.lastModified ?: 0

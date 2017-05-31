@@ -99,7 +99,11 @@ class ReservedInstancesCachingAgent implements CachingAgent, CustomScheduledAgen
 
     def amazonEC2 = amazonClientProvider.getAmazonEC2(account, region)
 
-    def result = amazonEC2.describeReservedInstances(new DescribeReservedInstancesRequest())
+
+    def request = new DescribeReservedInstancesRequest()
+    def result = AwsThrottler.throttleRequest {
+      amazonEC2.describeReservedInstances(request)
+    }
     List<ReservedInstances> allReservedInstances = result.reservedInstances
 
     Collection<CacheData> reservedInstancesData = allReservedInstances

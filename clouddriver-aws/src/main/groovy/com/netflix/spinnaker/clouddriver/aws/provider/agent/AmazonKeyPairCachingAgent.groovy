@@ -78,7 +78,9 @@ class AmazonKeyPairCachingAgent implements CachingAgent, AccountAware {
   CacheResult loadData(ProviderCache providerCache) {
     log.info("Describing items in ${agentType}")
     def ec2 = amazonClientProvider.getAmazonEC2(account, region)
-    def keyPairs = ec2.describeKeyPairs().keyPairs
+    def keyPairs = AwsThrottler.throttleRequest {
+      ec2.describeKeyPairs()
+    }.keyPairs
 
     List<CacheData> data = keyPairs.collect { KeyPairInfo keyPair ->
       new DefaultCacheData(Keys.getKeyPairKey(keyPair.keyName, region, account.name), [

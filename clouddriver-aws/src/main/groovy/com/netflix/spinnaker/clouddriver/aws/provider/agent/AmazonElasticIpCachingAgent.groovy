@@ -78,7 +78,9 @@ class AmazonElasticIpCachingAgent implements CachingAgent, AccountAware {
   CacheResult loadData(ProviderCache providerCache) {
     log.info("Describing items in ${agentType}")
     def ec2 = amazonClientProvider.getAmazonEC2(account, region)
-    def eips = ec2.describeAddresses().addresses
+    def eips = AwsThrottler.throttleRequest {
+      ec2.describeAddresses().addresses
+    }
 
     List<CacheData> data = eips.collect { Address address ->
       new DefaultCacheData(Keys.getElasticIpKey(address.publicIp, region, account.name), [

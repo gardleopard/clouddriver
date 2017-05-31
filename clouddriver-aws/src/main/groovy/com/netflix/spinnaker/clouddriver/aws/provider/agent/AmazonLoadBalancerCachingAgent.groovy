@@ -118,7 +118,9 @@ class AmazonLoadBalancerCachingAgent extends AbstractAmazonLoadBalancerCachingAg
     Long start = account.eddaEnabled ? null : System.currentTimeMillis()
 
     while (true) {
-      def resp = loadBalancing.describeLoadBalancers(request)
+      def resp = AwsThrottler.throttleRequest {
+        loadBalancing.describeLoadBalancers(request)
+      }
       if (account.eddaEnabled) {
         start = amazonClientProvider.lastModified ?: 0
       }

@@ -161,7 +161,9 @@ class AmazonSecurityGroupCachingAgent implements CachingAgent, OnDemandAgent, Ac
 
   private List<SecurityGroup> getSecurityGroups(AmazonEC2 amazonEC2) {
     log.info("Describing items in ${agentType}")
-    amazonEC2.describeSecurityGroups().securityGroups
+    AwsThrottler.throttleRequest {
+      amazonEC2.describeSecurityGroups().securityGroups
+    }
   }
 
   private CacheResult buildCacheResult(ProviderCache providerCache, List<SecurityGroup> securityGroups, Map<String, List<String>> evictions, Long lastModified) {

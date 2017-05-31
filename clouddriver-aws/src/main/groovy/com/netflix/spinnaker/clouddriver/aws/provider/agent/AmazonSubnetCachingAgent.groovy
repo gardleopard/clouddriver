@@ -82,7 +82,9 @@ class AmazonSubnetCachingAgent implements CachingAgent, AccountAware {
   CacheResult loadData(ProviderCache providerCache) {
     log.info("Describing items in ${agentType}")
     def ec2 = amazonClientProvider.getAmazonEC2(account, region)
-    def subnets = ec2.describeSubnets().subnets
+    def subnets = AwsThrottler.throttleRequest {
+      ec2.describeSubnets().subnets
+    }
 
     List<CacheData> data = subnets.collect { Subnet subnet ->
       Map<String, Object> attributes = objectMapper.convertValue(subnet, AwsInfrastructureProvider.ATTRIBUTES)

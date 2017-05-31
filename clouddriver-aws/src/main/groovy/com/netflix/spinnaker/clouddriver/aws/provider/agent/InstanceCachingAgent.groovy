@@ -111,7 +111,9 @@ class InstanceCachingAgent implements CachingAgent, AccountAware, DriftMetric {
     def request = new DescribeInstancesRequest().withMaxResults(500)
     List<Instance> awsInstances = []
     while (true) {
-      def resp = amazonEC2.describeInstances(request)
+      def resp = AwsThrottler.throttleRequest {
+        amazonEC2.describeInstances(request)
+      }
       if (account.eddaEnabled) {
         start = amazonClientProvider.lastModified ?: 0
       }

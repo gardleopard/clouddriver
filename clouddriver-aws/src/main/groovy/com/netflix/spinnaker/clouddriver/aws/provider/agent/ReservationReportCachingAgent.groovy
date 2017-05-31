@@ -305,7 +305,9 @@ class ReservationReportCachingAgent implements CachingAgent, CustomScheduledAgen
           def describeInstancesRequest = new DescribeInstancesRequest().withMaxResults(500)
           def allowedStates = ["pending", "running"] as Set<String>
           while (true) {
-            def result = amazonEC2.describeInstances(describeInstancesRequest)
+            def result = AwsThrottler.throttleRequest {
+              amazonEC2.describeInstances(describeInstancesRequest)
+            }
             result.reservations.each {
               it.getInstances().each {
                 if (!allowedStates.contains(it.state.name.toLowerCase())) {
